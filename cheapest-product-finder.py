@@ -1,6 +1,7 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup, SoupStrainer
 import webbrowser
+import re
 
 product = input("The name of the product: ")
 URL = "https://www.emag.hu/search/"+product
@@ -15,8 +16,8 @@ for i in prices:
     if len(i) < 2:
         pass
     else:
-        price = i.get_text()[:-3]
-        price_list.append(float(price))
+        price = re.sub("\D", "", i.get_text())
+        price_list.append(int(price))
 
 
 for i in price_list:
@@ -28,8 +29,9 @@ def open(index):
     href = html.find_all(
         "a", class_="product-title js-product-url")[index]["href"]
     webbrowser.open(href)
+    print(href)
 
 
-# open(index)
-print("A legolcsobb termek ara: {0:.3f} Ft.".format(cheapest))
+open(index)
+print(f"A legolcsobb termek ara: {cheapest}Ft.")
 print(price_list)
