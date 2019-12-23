@@ -1,37 +1,51 @@
 from urllib.request import urlopen
-from bs4 import BeautifulSoup, SoupStrainer
+from selenium import webdriver
 import webbrowser
 import re
 
+options = webdriver.ChromeOptions()
+options.add_argument('--ignore-certificate-errors')
+options.add_argument('--incognito')
+options.add_argument('--headless')
+
+driver = webdriver.Chrome(options=options)
+
 product = input("The name of the product: ")
 URL = "https://www.emag.hu/search/"+product
-html = BeautifulSoup(urlopen(URL), "html5lib")
 
 
-prices = html.find_all("p", class_="product-new-price")
+pages = []
+for i in range(1, 11):
+    page_edit = URL + "/p" + str(i)
+    pages.append(page_edit)
+
 price_list = []
+hrefs = []
 
 
-for i in prices:
-    if len(i) < 2:
-        pass
-    else:
-        price = re.sub("\D", "", i.get_text())
-        price_list.append(int(price))
+def priceConv(price):
+    x = re.sub("\\D", "", price)
+    price_list.append(int(x))
+
+
+def hrefList(href):
+    hrefs.append(href)
+
+
+for page in pages:
+    driver.get(page)
+    for i in driver.find_elements_by_class_name("card-item"):
+        raw_price = i.find_element_by_class_name("product-new-price").text
+        if len(raw_price) > 2:
+            priceConv(raw_price)
+            hrefList(i.find_element_by_css_selector('a').get_attribute('href'))
+        else:
+            pass
 
 
 for i in price_list:
     cheapest = min(price_list)
-    index = price_list.index(cheapest)
 
-
-def open(index):
-    href = html.find_all(
-        "a", class_="product-title js-product-url")[index]["href"]
-    webbrowser.open(href)
-    print(href)
-
-
-open(index)
+index = price_list.index(cheapest)
+webbrowser.open(hrefs[index])
 print(f"A legolcsobb termek ara: {cheapest}Ft.")
-print(price_list)
